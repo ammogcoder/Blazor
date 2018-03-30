@@ -98,8 +98,26 @@ namespace Microsoft.AspNetCore.Blazor.RenderTree
             => AddContent(sequence, textContent?.ToString());
 
         /// <summary>
+        /// Appends a frame representing a bool-valued attribute.
+        /// The attribute is associated with the most recently added element. If the value is <c>false</c> and the
+        /// current element is not a component, the frame will be omitted.
+        /// </summary>
+        /// <param name="sequence">An integer that represents the position of the instruction in the source code.</param>
+        /// <param name="name">The name of the attribute.</param>
+        /// <param name="value">The value of the attribute.</param>
+        public void AddAttribute(int sequence, string name, bool value)
+        {
+            AssertCanAddAttribute();
+            if (value || _lastNonAttributeFrameType == RenderTreeFrameType.Component)
+            {
+                Append(RenderTreeFrame.Attribute(sequence, name, true));
+            }
+        }
+
+        /// <summary>
         /// Appends a frame representing a string-valued attribute.
-        /// The attribute is associated with the most recently added element.
+        /// The attribute is associated with the most recently added element. If the value is <c>null</c> and the
+        /// current element is not a component, the frame will be omitted.
         /// </summary>
         /// <param name="sequence">An integer that represents the position of the instruction in the source code.</param>
         /// <param name="name">The name of the attribute.</param>
@@ -107,12 +125,16 @@ namespace Microsoft.AspNetCore.Blazor.RenderTree
         public void AddAttribute(int sequence, string name, string value)
         {
             AssertCanAddAttribute();
-            Append(RenderTreeFrame.Attribute(sequence, name, value));
+            if (value != null || _lastNonAttributeFrameType == RenderTreeFrameType.Component)
+            {
+                Append(RenderTreeFrame.Attribute(sequence, name, value));
+            }
         }
 
         /// <summary>
         /// Appends a frame representing an <see cref="UIEventArgs"/>-valued attribute.
-        /// The attribute is associated with the most recently added element.
+        /// The attribute is associated with the most recently added element. If the value is <c>null</c> and the
+        /// current element is not a component, the frame will be omitted.
         /// </summary>
         /// <param name="sequence">An integer that represents the position of the instruction in the source code.</param>
         /// <param name="name">The name of the attribute.</param>
@@ -120,22 +142,45 @@ namespace Microsoft.AspNetCore.Blazor.RenderTree
         public void AddAttribute(int sequence, string name, UIEventHandler value)
         {
             AssertCanAddAttribute();
-            Append(RenderTreeFrame.Attribute(sequence, name, value));
+            if (value != null || _lastNonAttributeFrameType == RenderTreeFrameType.Component)
+            {
+                Append(RenderTreeFrame.Attribute(sequence, name, value));
+            }
         }
 
         /// <summary>
         /// Appends a frame representing a string-valued attribute.
-        /// The attribute is associated with the most recently added element.
+        /// The attribute is associated with the most recently added element. If the value is <c>null</c>, or
+        /// the <see cref="System.Boolean" /> value <c>false</c> and the current element is not a component, the 
+        /// frame will be omitted.
         /// </summary>
         /// <param name="sequence">An integer that represents the position of the instruction in the source code.</param>
         /// <param name="name">The name of the attribute.</param>
         /// <param name="value">The value of the attribute.</param>
         public void AddAttribute(int sequence, string name, object value)
         {
+            // This looks a bit daunting because we need to handle the boxed/object version of all of the
+            // types that AddAttribute special cases.
             if (_lastNonAttributeFrameType == RenderTreeFrameType.Element)
             {
-                // Element attribute values can only be strings or UIEventHandler
-                Append(RenderTreeFrame.Attribute(sequence, name, value.ToString()));
+                if (value is null)
+                {
+                    // Do nothing, treat 'null' attribute values for elements as a conditional attribute.
+                }
+                else if (value is bool boolValue)
+                {
+                    // bools have special behavior for an element.
+                    Append(RenderTreeFrame.Attribute(sequence, name, boolValue));
+                }
+                else if (value is UIEventHandler eventHandler)
+                {
+                    Append(RenderTreeFrame.Attribute(sequence, name, eventHandler));
+                }
+                else
+                {
+                    // Element attribute values can only be strings or UIEventHandler
+                    Append(RenderTreeFrame.Attribute(sequence, name, value.ToString()));
+                }
             }
             else if (_lastNonAttributeFrameType == RenderTreeFrameType.Component)
             {

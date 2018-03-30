@@ -466,7 +466,7 @@ namespace Microsoft.AspNetCore.Blazor.Build.Test
             var frames = GetRenderTree(component);
             Assert.Collection(frames,
                 frame => AssertFrame.Element(frame, "input", 3, 0),
-                frame => AssertFrame.Attribute(frame, "value", "True", 1),
+                frame => AssertFrame.Attribute(frame, "value", true, 1),
                 frame =>
                 {
                     AssertFrame.Attribute(frame, "onchange", 2);

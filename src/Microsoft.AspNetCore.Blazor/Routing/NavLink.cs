@@ -100,19 +100,20 @@ namespace Microsoft.AspNetCore.Blazor.Routing
 
         private void Render(RenderTreeBuilder builder)
         {
-            builder.OpenElement(0, "a");
+            var i = 0;
+            builder.OpenElement(i++, "a");
 
             // Set "active" class dynamically
-            builder.AddAttribute(0, "class", CombineWithSpace(_cssClass, _isActive ? "active" : null));
+            builder.AddAttribute(i++, "class", CombineWithSpace(_cssClass, _isActive ? "active" : null));
 
             // Pass through all other attributes unchanged
-            foreach (var kvp in _allAttributes.Where(kvp => kvp.Key != "class"))
+            foreach (var kvp in _allAttributes.Where(kvp => kvp.Key != "class" && kvp.Key != RenderTreeBuilder.ChildContent))
             {
-                builder.AddAttribute(0, kvp.Key, kvp.Value);
+                builder.AddAttribute(i++, kvp.Key, kvp.Value);
             }
 
             // Pass through any child content unchanged
-            builder.AddContent(1, _childContent);
+            builder.AddContent(i++, _childContent);
 
             builder.CloseElement();
         }
